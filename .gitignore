@@ -1,0 +1,6 @@
+__pycache__
+logs
+dataset
+snapshots
+classifier.hdf5
+graph_test.png
