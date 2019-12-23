@@ -2,5 +2,6 @@ __pycache__
 logs
 dataset
 snapshots
+output.jpeg
 classifier.hdf5
 graph_test.png

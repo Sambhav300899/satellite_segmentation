@@ -1,4 +1,4 @@
-labels ={
+labels = {
 1 : 'buildings',
 2 : 'misc',
 3 : 'road',
@@ -9,4 +9,4 @@ labels ={
 8 : 'standing water',
 9 : 'large vehicle',
 10 : 'small vehicle',
- }
+}

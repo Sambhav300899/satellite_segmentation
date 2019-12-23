@@ -11,9 +11,11 @@
   "model_callbacks" : "snapshots",
   "input_shape" : 1024,
   "logs" : "logs",
-  "epochs" : 20,
+  "epochs" : 50,
   "batch_size" : 1,
-  "initial_lr" : 1e-3,
+  "initial_lr" : 1e-4,
   "final_model_name" : "classifier.hdf5"
   }
+
+
 }

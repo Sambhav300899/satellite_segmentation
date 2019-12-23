@@ -4,10 +4,12 @@ np.random.seed(42)
 import os
 import cv2
 import pandas as pd
+import tifffile as tiff
 from generator import generator
 import matplotlib.pyplot as plt
 from keras.optimizers import Adam
 from keras.utils import plot_model
+from utils import get_rgb_img, get_mask
 from keras.models import load_model, Model
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from keras.layers import BatchNormalization, Dropout, Concatenate
@@ -118,16 +120,34 @@ class network:
         self.model.save('classifier.hdf5')
         self.plot_data(H, epochs)
 
-    def predict(self, img):
-        img = cv2.resize(img, self.input_shape[:2])
-        img = np.expand_dims(img, axis = 0)
+    def predict(self, img_path, scalar_path, polygon_path, lbl):
+        img = tiff.imread(img_path).transpose([1, 2, 0])
+        mask = None
 
-        out_img = self.model.predict(img)[0]
-        out_img = out_img > 0.95
+        try:
 
-        cv2.imshow("img", img[0])
+            df_grid = pd.read_csv(scalar_path)
+            df_poly = pd.read_csv(polygon_path)
+            mask = get_mask(df_grid, df_poly, img_path.split('.')[0][:-2], img.shape, lbl)
+            mask = cv2.resize(mask, self.input_shape[:2])
+        except:
+            print("no scaler and polygon path found, displaying predection without ground truth")
+
+        img_rgb = get_rgb_img(img)
+        img_rgb = cv2.resize(img_rgb, self.input_shape[:2])
+        img_rgb = np.expand_dims(img_rgb, axis = 0)
+
+        out_img = self.model.predict(img_rgb.astype('float') / 255.0)[0]
+        out_img = out_img > 0.5
+
+        cv2.imshow("img", img_rgb[0])
         cv2.imshow("preds", out_img.astype('int') * 255.0)
+
+        if mask is not None:
+            cv2.imshow("ground_truth", mask * 255.0)
+
         cv2.waitKey(0)
+        cv2.imwrite("output.jpeg", out_img.astype('int') * 255.0)
 
     def evaluate(self, img_dir):
         pass
