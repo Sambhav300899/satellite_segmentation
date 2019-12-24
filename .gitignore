@@ -6,6 +6,6 @@ output.jpeg
 classifier.hdf5
 graph_test.png
 good_models 
-op_to_poly
+op_to_poly.py
 multi_gen.py
 test.jpeg
