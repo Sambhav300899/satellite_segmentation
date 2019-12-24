@@ -4,21 +4,42 @@ np.random.seed(42)
 import os
 import cv2
 import pandas as pd
+from models import unet
 import tifffile as tiff
+import keras.backend as K
 from generator import generator
 import matplotlib.pyplot as plt
 from keras.optimizers import Adam
 from keras.utils import plot_model
+from keras.models import load_model
 from utils import get_rgb_img, get_mask
-from keras.models import load_model, Model
+from keras.losses import binary_crossentropy
 from keras.callbacks import TensorBoard, ModelCheckpoint
-from keras.layers import BatchNormalization, Dropout, Concatenate
-from keras.layers import Conv2D, MaxPool2D, Input, Conv2DTranspose, Add
 
 def get_epoch_len(lbl, polygon_path):
     df = pd.read_csv(polygon_path)
     df = df[df['ClassType'] == lbl]
     return len(df)
+
+def jaccard_coef(y_true, y_pred, epsilon = 1e-6):
+    axes = tuple(range(1, len(y_pred.shape)-1))
+
+    num = K.sum(y_pred * y_true, axes)
+    denum = K.sum(y_true + y_pred - y_pred * y_true)
+
+    return K.mean(num / (denum + epsilon))
+
+def dice_coef(y_true, y_pred, epsilon = 1e-6):
+    axes = tuple(range(1, len(y_pred.shape)-1))
+
+    num = 2. * K.sum(y_pred * y_true, axes)
+    denum = K.sum(K.square(y_pred) + K.square(y_true), axes)
+
+    return 1 - K.mean(num / (denum + epsilon))
+
+def loss(y_true, y_pred):
+    #return binary_crossentropy(y_true, y_pred) - K.log(jaccard_coef(y_true, y_pred))
+    return dice_coef(y_true, y_pred) + binary_crossentropy(y_true, y_pred)
 
 class network:
     def __init__(self, model_path = None, input_shape = 1024):
@@ -28,64 +49,10 @@ class network:
         if model_path == None:
             self.model = self.create_model()
         else:
-            self.model = load_model(model_path)
+            self.model = load_model(model_path, custom_objects = {'dice_coef' : dice_coef, 'loss' : loss , 'jaccard_coef' : jaccard_coef})
 
     def create_model(self):
-
-        input = Input(shape = self.input_shape)
-        filters = 16
-        #encoder
-        conv_1 = Conv2D(filters, (3, 3), padding = 'same', activation = 'relu')(input)
-        conv_2 = Conv2D(filters, (3, 3), padding = 'same', activation = 'relu')(conv_1)
-        pool_1 = MaxPool2D((2, 2))(conv_2)
-        drop_1 = Dropout(0.5)(pool_1)
-
-        conv_3 = Conv2D(filters * 2, (3, 3), padding = 'same', activation = 'relu')(drop_1)
-        conv_4 = Conv2D(filters * 2, (3, 3), padding = 'same', activation = 'relu')(conv_3)
-        pool_2 = MaxPool2D((2, 2))(conv_4)
-        drop_2 = Dropout(0.5)(pool_2)
-
-        conv_5 = Conv2D(filters * 4, (3, 3), padding = 'same', activation = 'relu')(drop_2)
-        conv_6 = Conv2D(filters * 4, (3, 3), padding = 'same', activation = 'relu')(conv_5)
-        pool_3 = MaxPool2D((2, 2))(conv_6)
-        drop_3 = Dropout(0.5)(pool_3)
-
-        conv_7 = Conv2D(filters * 8, (3, 3), padding = 'same', activation = 'relu')(drop_3)
-        conv_8 = Conv2D(filters * 8, (3, 3), padding = 'same', activation = 'relu')(conv_7)
-        pool_4 = MaxPool2D((2, 2))(conv_8)
-        drop_4 = Dropout(0.5)(pool_4)
-
-        #bridge
-        conv_b1 = Conv2D(filters * 16, (3, 3), padding = 'same', activation = 'relu')(drop_4)
-        conv_b2 = Conv2D(filters * 16, (3, 3), padding = 'same', activation = 'relu')(conv_b1)
-
-        #decoder
-        upsm_1 = Conv2DTranspose(filters * 8, (3, 3), strides = (2, 2), padding = 'same')(conv_b2)
-        concat_3 = Concatenate()([upsm_1, conv_8])
-        drop_5 = Dropout(0.5)(concat_3)
-        conv_9 = Conv2D(filters * 8, (3, 3), padding = 'same', activation = 'relu')(drop_5)
-        conv_10 = Conv2D(filters * 8, (3, 3), padding = 'same', activation = 'relu')(conv_9)
-
-        upsm_2 = Conv2DTranspose(filters * 4, (3, 3), strides = (2, 2), padding = 'same')(conv_10)
-        concat_4 = Concatenate()([upsm_2, conv_6])
-        drop_6 = Dropout(0.5)(concat_4)
-        conv_11 = Conv2D(filters * 4, (3, 3), padding = 'same', activation = 'relu')(drop_6)
-        conv_12 = Conv2D(filters * 4, (3, 3), padding = 'same', activation = 'relu')(conv_11)
-
-        upsm_3 = Conv2DTranspose(filters * 8, (3, 3), strides = (2, 2), padding = 'same')(conv_12)
-        concat_5 = Concatenate()([upsm_3, conv_4])
-        drop_7 = Dropout(0.5)(concat_5)
-        conv_13 = Conv2D(filters * 2, (3, 3), padding = 'same', activation = 'relu')(drop_7)
-        conv_14 = Conv2D(filters * 2, (3, 3), padding = 'same', activation = 'relu')(conv_13)
-
-        upsm_4 = Conv2DTranspose(filters * 8, (3, 3), strides = (2, 2), padding = 'same')(conv_14)
-        concat_6 = Concatenate()([upsm_4, conv_2])
-        drop_8 = Dropout(0.5)(concat_6)
-        conv_15 = Conv2D(filters * 1, (3, 3), padding = 'same', activation = 'relu')(drop_8)
-        conv_16 = Conv2D(filters * 1, (3, 3), padding = 'same', activation = 'relu')(conv_15)
-        output = Conv2D(1, (1, 1), padding = 'same', activation = 'sigmoid')(conv_16)
-
-        net = Model(input, output)
+        net = unet.get_model(self.input_shape)
         net.summary()
         plot_model(net, 'model.png', show_shapes = True)
 
@@ -95,7 +62,7 @@ class network:
 
         train_gen = generator(lbl, img_path = train_path, polygon_path = polygon_path, scaler_path = scaler_path, bs = int(bs), input_shape = self.input_shape)
 
-        self.model.compile(loss = 'binary_crossentropy', optimizer = Adam(lr = lr, decay = lr // epochs), metrics = ['mae'])
+        self.model.compile(loss = dice_coef, optimizer = Adam(lr = lr, decay = lr // epochs), metrics = ['binary_crossentropy', dice_coef, jaccard_coef])
         #self.model.compile(loss = 'mae', optimizer = 'adadelta', metrics = ['mse'])
         #self.model.compile(loss = 'mae', optimizer = RAdam(), metrics = ['mse'])
 

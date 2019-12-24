@@ -5,3 +5,7 @@ snapshots
 output.jpeg
 classifier.hdf5
 graph_test.png
+good_models 
+op_to_poly
+multi_gen.py
+test.jpeg

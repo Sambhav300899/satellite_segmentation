@@ -2,12 +2,12 @@ import cv2
 import numpy as np
 from shapely import wkt, affinity
 
-def stretch_8bit(bands, lower_percent = 2, higher_percent = 98):
+def stretch_8bit(bands, lower_percent = 5, higher_percent = 95):
     out = np.zeros_like(bands)
 
-    for i in range(3):
+    for i in range(bands.shape[2]):
         a = 0
-        b = 255
+        b = 255.0
         c = np.percentile(bands[:, :, i], lower_percent)
         d = np.percentile(bands[:, :, i], higher_percent)
         t = a + (bands[: , :, i] - c) * (b - a) / (d - c)
