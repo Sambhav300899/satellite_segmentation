@@ -5,10 +5,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    gen = generator(bs = 1, input_shape = (512, 512, 3), lbl = 1)
+    gen = generator(bs = 7, input_shape = (112, 112, 3), lbl = 4)
 
     while True:
         data = next(gen)
-        #cv2.imshow("img", data[0][0])
+        cv2.imshow("img", data[0][0])
         cv2.imshow("mask", data[1][0] * 255.0)
         cv2.waitKey(0)

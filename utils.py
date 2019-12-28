@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from shapely import wkt, affinity
 
-def stretch_8bit(bands, lower_percent = 5, higher_percent = 95):
+def stretch_nbit(bands, lower_percent = 5, higher_percent = 95):
     out = np.zeros_like(bands)
 
     for i in range(bands.shape[2]):
@@ -23,7 +23,7 @@ def get_rgb_img(img):
     img_rgb[:,:,2] = img[:,:,4] #red
     img_rgb[:,:,1] = img[:,:,2] #green
     img_rgb[:,:,0] = img[:,:,1] #blue
-    img_rgb = stretch_8bit(img_rgb)
+    img_rgb = stretch_nbit(img_rgb)
 
     return img_rgb
 
@@ -71,3 +71,25 @@ def get_mask(df_grid, df_poly, img_path, img_shape, lbl):
         masks.append(create_mask(scaled_poly, img_shape[:2]))
 
     return masks[0]
+
+def create_crops(img, input_shape):
+    crops = []
+    border_len = (0 - 3300) % input_shape[0] #https://stackoverflow.com/questions/10133194/reverse-modulus-operator/31735393#31735393
+    img = cv2.copyMakeBorder(img, 0, border_len, 0, border_len, cv2.BORDER_REFLECT)
+
+    for i in range(0, img.shape[1], input_shape[1]):
+        for j in range(0, img.shape[0], input_shape[0]):
+            crops.append(img[i : i + input_shape[1], j : j + input_shape[0]])
+
+    return crops, img
+
+def stitch(cropped_images, input_shape):
+    border_len = (0 - 3300) % input_shape[0] #https://stackoverflow.com/questions/10133194/reverse-modulus-operator/31735393#31735393
+    img_mask = np.zeros((3300 + border_len, 3300 + border_len, 1))
+    k = 0
+    for i in range(0, img_mask.shape[1], input_shape[1]):
+        for j in range(0, img_mask.shape[0], input_shape[0]):
+            img_mask[i : i + input_shape[1], j : j + input_shape[0]] = cropped_images[k]
+            k = k + 1
+
+    return img_mask

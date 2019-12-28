@@ -1,7 +1,7 @@
 {
   "data":{
   "label" : 1,
-  "train_data" : "dataset/sixteen_band",
+  "train_data" : "dataset/three_band",
   "scaler_data" : "dataset/grid_sizes.csv",
   "polygon_data" : "dataset/train_wkt_v4.csv"
   },
@@ -9,10 +9,10 @@
   "train":{
   "train_val_split" : 0.25,
   "model_callbacks" : "snapshots",
-  "input_shape" : 512,
+  "input_shape" : 256,
   "logs" : "logs",
-  "epochs" : 50,
-  "batch_size" : 2,
+  "epochs" : 20,
+  "batch_size" : 16,
   "initial_lr" : 1e-3,
   "final_model_name" : "classifier.hdf5"
   }

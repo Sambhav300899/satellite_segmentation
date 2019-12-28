@@ -1,7 +1,7 @@
-from model import network
 import os
 import json
 import argparse
+from model import network
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

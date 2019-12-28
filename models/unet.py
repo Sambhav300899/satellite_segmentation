@@ -1,10 +1,10 @@
 from keras.models import Model
 from keras.layers import BatchNormalization, Dropout, Concatenate
-from keras.layers import Conv2D, MaxPool2D, Input, Conv2DTranspose, Add
+from keras.layers import Conv2D, MaxPool2D, Input, Conv2DTranspose
 
 def get_model(input_shape):
     input = Input(shape = input_shape)
-    filters = 8
+    filters = 16
     #encoder
     conv_1 = Conv2D(filters, (3, 3), padding = 'same', activation = 'relu')(input)
     conv_2 = Conv2D(filters, (3, 3), padding = 'same', activation = 'relu')(conv_1)
