@@ -6,7 +6,7 @@ there are currently two supported models -
 1 - Unet from scratch
 2 - Unet using vgg16 as encoder
 
-## Dataset
+### Dataset
 Download the dataset from https://www.kaggle.com/c/dstl-satellite-imagery-feature-detection in your current directory. and extract it. 
 **NOTE** - the 16 band images can be deleted from the dataset because we are not using them.
 
@@ -24,7 +24,7 @@ The model can be configured using the config.json file
 python3 train.py --config config.json
 ```
 
-# Prediction
+### Prediction
 ```bash
 python3 predict.py --model {model path} --config config.json --img {image path} 
 ```
