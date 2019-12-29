@@ -5,13 +5,14 @@ import os
 import cv2
 import pandas as pd
 import tifffile as tiff
+import keras.backend as K
 from generator import generator
 import matplotlib.pyplot as plt
-from loss import loss, dice_coef
+from loss import loss, dice_loss
 from models import vgg_unet, unet
 from keras.optimizers import Adam
 from keras.utils import plot_model
-from keras.models import load_model
+from keras.metrics import MeanIoU
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from utils import stretch_nbit, get_mask, create_crops, stitch
 
@@ -20,15 +21,23 @@ def get_epoch_len(lbl, polygon_path):
     df = df[df['ClassType'] == lbl]
     return len(df)
 
+def iou(y_true, y_pred):
+    intersection = y_true * y_pred
+
+    notTrue = 1 - y_true
+    union = y_true + (notTrue * y_pred)
+
+    return K.sum(intersection)/K.sum(union)
+
 class network:
     def __init__(self, model_path = None, input_shape = 512):
 
         self.input_shape = (input_shape, input_shape, 3)
+        self.model = self.create_model()
 
-        if model_path == None:
-            self.model = self.create_model()
-        else:
-            self.model = load_model(model_path, custom_objects = {'dice_coef' : dice_coef, 'loss' : loss})
+        if model_path != None:
+            self.model.load_weights(model_path)
+
 
     def create_model(self):
         net = vgg_unet.get_model(self.input_shape)
@@ -41,7 +50,7 @@ class network:
 
         train_gen = generator(lbl, img_path = train_path, polygon_path = polygon_path, scaler_path = scaler_path, bs = int(bs), input_shape = self.input_shape)
 
-        self.model.compile(loss = loss, optimizer = Adam(lr = lr, decay = lr // epochs), metrics = ['binary_crossentropy', dice_coef])
+        self.model.compile(loss = loss, optimizer = Adam(lr = lr, decay = lr // epochs), metrics = [dice_loss, 'binary_crossentropy'])
 
         filepath = callback_dir + os.path.sep + "weights-improvement-{epoch:02d}-{loss:.2f}.hdf5"
 
@@ -99,9 +108,10 @@ class network:
 
         if mask is not None:
             cv2.imshow("ground_truth", mask * 255.0)
+            print (iou(mask, output))
 
         cv2.waitKey(0)
-        cv2.imwrite("output.jpeg", out_img.astype('int') * 255.0)
+        cv2.imwrite("output.jpeg", output * 255.0)
 
     def evaluate(self, img_dir):
         pass

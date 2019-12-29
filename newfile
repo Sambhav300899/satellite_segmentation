@@ -1,0 +1,22 @@
+import cv2
+import numpy as np
+from keras import backend as K
+
+def iou_coef(y_true, y_pred, smooth=1):
+    axes = tuple(range(1, len(y_pred.shape) - 1))
+
+    inter = K.sum(K.abs(y_true * y_pred), axis = axes)
+    union = K.sum(y_true, axes) + K.sum(y_pred, axes) - inter
+    iou = K.mean((inter + smooth) / (union + smooth), axis = 0)
+
+
+if __name__ == "__main__":
+    img = cv2.imread("output.jpeg")
+    #img = cv2.resize(img, (10, 10))
+
+    z = (img / 255.0 > 0.5).astype('float')
+    z = np.expand_dims(z, axis = -1)
+    z = np.expand_dims(z, axis = 0)
+    a = np.zeros(z.shape)
+
+    print (iou_coef(z, a))
