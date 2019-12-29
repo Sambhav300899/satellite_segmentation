@@ -9,10 +9,10 @@
   "train":{
   "train_val_split" : 0.25,
   "model_callbacks" : "snapshots",
-  "input_shape" : 256,
+  "input_shape" : 128,
   "logs" : "logs",
   "epochs" : 10,
-  "batch_size" : 16,
+  "batch_size" : 64,
   "initial_lr" : 1e-4,
   "final_model_name" : "classifier.hdf5"
   }
