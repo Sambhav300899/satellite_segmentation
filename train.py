@@ -32,6 +32,7 @@ if __name__ == '__main__':
 
     model.train(
     json_data['data']['train_data'],
+    json_data['train']['train_val_split'],
     json_data['data']['polygon_data'],
     json_data['data']['scaler_data'],
     json_data['train']['epochs'],

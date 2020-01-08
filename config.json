@@ -2,6 +2,7 @@
   "data":{
   "label" : 1,
   "train_data" : "dataset/three_band",
+  "test_path" : "dataset/three_band_test",
   "scaler_data" : "dataset/grid_sizes.csv",
   "polygon_data" : "dataset/train_wkt_v4.csv"
   },
@@ -12,7 +13,7 @@
   "input_shape" : 128,
   "logs" : "logs",
   "epochs" : 10,
-  "batch_size" : 64,
+  "batch_size" : 32,
   "initial_lr" : 1e-4,
   "final_model_name" : "classifier.hdf5"
   }

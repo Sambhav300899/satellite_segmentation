@@ -46,9 +46,13 @@ class network:
 
         return net
 
-    def train(self, train_path, polygon_path, scaler_path, epochs, bs, lr, callback_dir, log_dir, lbl):
+    def train(self, train_path, train_val_split, polygon_path, scaler_path, epochs, bs, lr, callback_dir, log_dir, lbl):
 
-        train_gen = generator(lbl, img_path = train_path, polygon_path = polygon_path, scaler_path = scaler_path, bs = int(bs), input_shape = self.input_shape)
+        train_gen = generator(lbl, img_path = train_path, polygon_path = polygon_path, scaler_path = scaler_path,
+                            bs = int(bs), input_shape = self.input_shape, train_val_split = train_val_split, subset = 'train')
+
+        val_gen = generator(lbl, img_path = train_path, polygon_path = polygon_path, scaler_path = scaler_path,
+                            bs = int(bs), input_shape = self.input_shape, train_val_split = train_val_split, subset = 'val')
 
         self.model.compile(loss = loss, optimizer = Adam(lr = lr, decay = lr // epochs), metrics = [dice_loss, 'binary_crossentropy'])
 
@@ -61,9 +65,9 @@ class network:
 
         H = self.model.fit_generator(
         train_gen,
-        steps_per_epoch = (get_epoch_len(lbl, polygon_path) * ((3300 / self.input_shape[0]) ** 2)) // bs,
-        #validation_data = val_gen,
-        #validation_steps = len(os.listdir(val_path)) // bs,
+        steps_per_epoch = (get_epoch_len(lbl, polygon_path) * (1 - train_val_split) * ((3300 / self.input_shape[0]) ** 2)) // bs,
+        validation_data = val_gen,
+        validation_steps = (get_epoch_len(lbl, polygon_path) * train_val_split * ((3300 / self.input_shape[0]) ** 2)) // bs,
         epochs = epochs,
         shuffle = True,
         verbose = 1,
@@ -92,7 +96,6 @@ class network:
         mask_crops = []
 
         for img_crop in img_crops:
-            print("processing")
             input = np.expand_dims(img_crop, axis = 0)
             out_img = self.model.predict(input.astype('float') / 255.0)[0]
             out_img = out_img > 0.5
@@ -100,6 +103,7 @@ class network:
 
         output = stitch(mask_crops, self.input_shape)
 
+        op_copy = output.copy()
         output = cv2.resize(output, (512, 512))
         img_rgb = cv2.resize(img_rgb, (512, 512))
 
@@ -111,14 +115,14 @@ class network:
             print (iou(mask, output))
 
         cv2.waitKey(0)
-        cv2.imwrite("output.jpeg", output * 255.0)
+        cv2.imwrite("output.jpeg", op_copy * 255.0)
 
     def evaluate(self, img_dir):
         pass
 
     def plot_data(self, H, n):
         plt.plot(np.arange(0, n), H.history['loss'], label = 'train loss', color = 'g')
-        #plt.plot(np.arange(0, n), H.history['val_loss'], label = 'validation loss', color = 'b')
+        plt.plot(np.arange(0, n), H.history['val_loss'], label = 'validation loss', color = 'b')
         plt.title('training loss')
         plt.xlabel('Epoch #')
         plt.ylabel('loss')

@@ -24,4 +24,4 @@ def loss(y_true, y_pred):
     #return binary_crossentropy(y_true, y_pred) - K.log(jaccard_coef(y_true, y_pred))
     #return dice_coef(y_true, y_pred) + binary_crossentropy(y_true, y_pred)
     #return dice_coef(y_true, y_pred)
-    return dice_loss(y_true, y_pred) + 0.5 * binary_crossentropy(y_true, y_pred)
+    return dice_loss(y_true, y_pred) + binary_crossentropy(y_true, y_pred)

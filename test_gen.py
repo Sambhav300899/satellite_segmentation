@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    gen = generator(bs = 7, input_shape = (112, 112, 3), lbl = 4)
+    gen = generator(bs = 7, input_shape = (512, 512, 3), lbl = 5)
 
     while True:
         data = next(gen)
