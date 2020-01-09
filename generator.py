@@ -1,6 +1,4 @@
 import random
-random.seed(42)
-
 import os
 import cv2
 import numpy as np
@@ -13,13 +11,12 @@ def generator(lbl, img_path = 'dataset/three_band', scaler_path = 'dataset/grid_
     df_grid = pd.read_csv(scaler_path)
     df_poly = pd.read_csv(polygon_path)
     im_paths = [img_path + os.path.sep + path.split('.')[0] for path in list(df_poly['ImageId'])]
-    random.shuffle(im_paths)
     split = len(im_paths) * train_val_split
 
     if subset == 'train':
-        im_paths = im_paths[:int(split)]
-    elif subset == 'val':
         im_paths = im_paths[int(split):]
+    elif subset == 'val':
+        im_paths = im_paths[:int(split)]
 
     while True:
         crops_rgb = []
